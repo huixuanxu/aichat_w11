@@ -1,0 +1,15 @@
+# Python 虛擬環境
+backend/venv/
+__pycache__/
+*.py[cod]
+
+# 敏感資訊 (最重要的！)
+backend/.env
+
+# Node.js 依賴套件
+frontend/node_modules/
+frontend/dist/
+
+# 作業系統暫存檔
+.DS_Store
+Thumbs.db

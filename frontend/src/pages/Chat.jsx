@@ -20,13 +20,15 @@ function Chat() {
     // 1. 將使用者的訊息加入對話框
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input; // 暫存目前的輸入
     setInput('');
     setIsLoading(true);
 
     try {
-      // 2. 發送請求至後端 FastAPI
-      const res = await axios.post('http://localhost:8000/chat',
-        { message: input },
+      // 🌟 重點修正：將 'http://localhost:8000/chat' 改為 '/api/chat'
+      // 這樣在 Vercel 部署後，它會自動對應到後端 API
+      const res = await axios.post('/api/chat',
+        { message: currentInput },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -34,7 +36,12 @@ function Chat() {
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply }]);
     } catch (err) {
       console.error("聊天連線出錯：", err);
-      alert("連線中斷，請重新登入");
+      // 如果是 401 錯誤，通常是 Token 過期
+      if (err.response?.status === 401) {
+        alert("登入逾時，請重新登入");
+      } else {
+        alert("連線中斷，請稍後再試");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +130,6 @@ function Chat() {
                 boxShadow: '4px 4px 12px rgba(0,0,0,0.06)',
                 lineHeight: '1.6',
                 fontSize: '15.5px',
-                // 🌟 重點修正：這三行解決了換行與溢出問題
                 whiteSpace: 'pre-wrap', 
                 wordBreak: 'break-word',
                 overflowWrap: 'break-word'

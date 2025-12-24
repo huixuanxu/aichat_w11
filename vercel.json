@@ -1,8 +1,13 @@
 {
+  "functions": {
+    "backend/main.py": {
+      "runtime": "@vercel/python"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/main.py"
+      "destination": "backend/main.py"
     },
     {
       "source": "/(.*)",

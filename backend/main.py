@@ -63,7 +63,7 @@ app.add_middleware(
 
 # 模擬使用者資料庫與認證系統
 FAKE_USERS_DB = {"user123": "password123"}
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 # 定義前端請求的 JSON 資料格式
 class ChatRequest(BaseModel):
@@ -72,14 +72,14 @@ class ChatRequest(BaseModel):
 # --- 4. API 路由定義 ---
 
 # 登入 API：驗證帳密並發放暫時的 Token
-@app.post("/login")
+@app.post("/api/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     if form_data.username in FAKE_USERS_DB and FAKE_USERS_DB[form_data.username] == form_data.password:
         return {"access_token": f"token_{form_data.username}", "token_type": "bearer"}
     raise HTTPException(status_code=400, detail="帳號或密碼錯誤")
 
 # 聊天 API：處理對話並維護記憶
-@app.post("/chat")
+@app.post("/api/chat")
 async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
     try:
         # 🌟 記憶功能實現：檢查此使用者是否已有開啟中的對話

@@ -1,9 +1,15 @@
 {
-  "functions": {
-    "backend/main.py": {
-      "runtime": "@vercel/python"
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/main.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/dist/**",
+      "use": "@vercel/static"
     }
-  },
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -11,7 +17,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "frontend/dist/$1"
     }
   ]
 }

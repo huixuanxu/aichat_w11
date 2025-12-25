@@ -9,11 +9,10 @@ from pydantic import BaseModel
 
 # --- 1. 安全性設定 ---
 load_dotenv() 
-# Vercel 環境會直接抓取後台設定的 Key
 API_KEY = os.getenv("GEMINI_API_KEY")
 
+# 即使沒抓到 Key 也不要讓程式在啟動時崩潰
 if not API_KEY:
-    # 這裡稍微改寫，避免在部署時因為找不到檔案而崩潰
     API_KEY = "TEMP_KEY" 
 
 client = genai.Client(api_key=API_KEY)
@@ -49,7 +48,8 @@ CHARACTER_SETTING = """
 chat_sessions = {}
 
 # --- 3. 初始化 FastAPI ---
-app = FastAPI()
+# 🌟 關鍵修正：redirect_slashes=False 避免 Vercel 轉發時將 POST 變 GET
+app = FastAPI(redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,7 +60,7 @@ app.add_middleware(
 )
 
 FAKE_USERS_DB = {"user123": "password123"}
-# 重要：這裡的路徑要跟前端呼叫的 /api/login 對齊
+# 與前端登入路徑對齊
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 class ChatRequest(BaseModel):
@@ -68,19 +68,22 @@ class ChatRequest(BaseModel):
 
 # --- 4. API 路由定義 ---
 
+# 🌟 雙重路徑保險：確保無論 Vercel 如何轉發都能抓到請求
 @app.post("/api/login")
+@app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    # 確保這裡的邏輯與 FAKE_USERS_DB 匹配
     if form_data.username in FAKE_USERS_DB and FAKE_USERS_DB[form_data.username] == form_data.password:
         return {"access_token": f"token_{form_data.username}", "token_type": "bearer"}
+    # 這裡如果失敗會回傳 400，前端就會顯示「帳號密碼錯誤」
     raise HTTPException(status_code=400, detail="帳號或密碼錯誤")
 
 @app.post("/api/chat")
+@app.post("/chat")
 async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
     try:
         if token not in chat_sessions:
             chat_sessions[token] = client.chats.create(
-                model="gemini-1.5-flash", # 改用更穩定的模型名稱
+                model="gemini-1.5-flash", 
                 config=types.GenerateContentConfig(
                     system_instruction=CHARACTER_SETTING
                 )
@@ -88,12 +91,9 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
         
         current_chat = chat_sessions[token]
         response = current_chat.send_message(request.message)
-        
         return {"reply": response.text}
         
     except Exception as e:
         print(f"Error: {e}")
         return {"reply": "我現在有點累了，可以稍後再跟我說話嗎？😊"}
-
-# Vercel 部署不需要 if __name__ == "__main__" 這段，但留著也沒關係
 

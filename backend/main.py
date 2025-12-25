@@ -107,12 +107,7 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
         print(f"Chat Error: {str(e)}")
         return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？"}
 
-# --- 5. 本地執行 ---
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-# Vercel 要求：單獨的 handler function
+# Vercel handler - 必須在最底層，全域作用域
 def handler(request):
     return app(request)
 
@@ -120,4 +115,5 @@ def handler(request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 

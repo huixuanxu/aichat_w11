@@ -112,5 +112,12 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
 
+# Vercel 要求：單獨的 handler function
+def handler(request):
+    return app(request)
 
- # ---修改vercel.json---
+# 本地執行
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+

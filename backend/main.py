@@ -44,11 +44,11 @@ CHARACTER_SETTING = """
 - AI：抱抱你，聽起來真的委屈了。辛苦努力了一整天卻換來指責，難過是很正常的。今晚先別想工作了，泡個熱水澡休息一下好嗎？我會一直在這裡陪你。✨
 不管發生什麼事，我都會在這裡陪著你。✨
 """
-# 用於儲存對話 Session (記憶功能)
+# 用於儲存對話 Session
 chat_sessions = {}
 
-# --- 3. 初始化 FastAPI 應用程式 ---
-# 🌟 關鍵：不使用自動斜線跳轉，避免 Vercel 將 POST 轉為 GET 導致 405
+# --- 3. 初始化 FastAPI ---
+# 🌟 redirect_slashes=False 是為了防止 Vercel 強制跳轉導致 POST 變 GET
 app = FastAPI(redirect_slashes=False)
 
 app.add_middleware(
@@ -66,15 +66,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 class ChatRequest(BaseModel):
     message: str
 
-# --- 4. API 路由定義 ---
+# --- 4. API 路由定義 (雙路由策略) ---
 
-# 診斷用：如果瀏覽器打開 [網址]/api/health 看到 OK，代表後端有動
+# 診斷用路由：解決空白畫面問題
 @app.get("/api/health")
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "message": "Backend is running!"}
 
-# 登入 API：支援兩種路徑格式，確保轉發萬無一失
+# 登入 API：解決 405 錯誤
 @app.api_route("/api/login", methods=["POST", "OPTIONS"])
 @app.api_route("/login", methods=["POST", "OPTIONS"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -91,7 +91,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.post("/chat")
 async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
     try:
-        # 如果是新對話，建立新 session 並注入性格
         if token not in chat_sessions:
             chat_sessions[token] = client.chats.create(
                 model="gemini-2.0-flash-exp", 
@@ -102,15 +101,13 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
         
         current_chat = chat_sessions[token]
         response = current_chat.send_message(request.message)
-        
         return {"reply": response.text}
         
     except Exception as e:
         print(f"Chat Error: {str(e)}")
-        # 即使報錯也回傳 JSON，避免前端解析失敗
         return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？😊"}
 
-# --- 5. 本地執行（部署到 Vercel 時這段會被忽略） ---
+# --- 5. 本地執行 ---
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

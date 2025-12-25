@@ -74,9 +74,9 @@ class ChatRequest(BaseModel):
 async def health_check():
     return {"status": "ok", "message": "Backend is running!"}
 
-# 登入 API：解決 405 錯誤
-@app.api_route("/api/login", methods=["POST", "OPTIONS"])
-@app.api_route("/login", methods=["POST", "OPTIONS"])
+# 登入 API：改成標準 @app.post
+@app.post("/api/login")
+@app.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     username = form_data.username
     password = form_data.password

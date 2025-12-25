@@ -105,7 +105,7 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
         
     except Exception as e:
         print(f"Chat Error: {str(e)}")
-        return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？😊"}
+        return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？"}
 
 # --- 5. 本地執行 ---
 if __name__ == "__main__":

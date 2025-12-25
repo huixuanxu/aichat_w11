@@ -2,16 +2,16 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 
-# --- 1. 安全性設定 ---
+# --- 1. 初始化與安全設定 ---
 load_dotenv() 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
-# 即使沒抓到 Key 也不要讓程式在啟動時崩潰
+# 若環境變數未設定，給予預設值以防啟動崩潰
 if not API_KEY:
     API_KEY = "TEMP_KEY" 
 
@@ -44,11 +44,11 @@ CHARACTER_SETTING = """
 - AI：抱抱你，聽起來真的委屈了。辛苦努力了一整天卻換來指責，難過是很正常的。今晚先別想工作了，泡個熱水澡休息一下好嗎？我會一直在這裡陪你。✨
 不管發生什麼事，我都會在這裡陪著你。✨
 """
-
+# 用於儲存對話 Session (記憶功能)
 chat_sessions = {}
 
-# --- 3. 初始化 FastAPI ---
-# 🌟 關鍵修正：redirect_slashes=False 避免 Vercel 轉發時將 POST 變 GET
+# --- 3. 初始化 FastAPI 應用程式 ---
+# 🌟 關鍵：不使用自動斜線跳轉，避免 Vercel 將 POST 轉為 GET 導致 405
 app = FastAPI(redirect_slashes=False)
 
 app.add_middleware(
@@ -59,8 +59,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 測試用帳密
 FAKE_USERS_DB = {"user123": "password123"}
-# 與前端登入路徑對齊
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 class ChatRequest(BaseModel):
@@ -68,22 +68,33 @@ class ChatRequest(BaseModel):
 
 # --- 4. API 路由定義 ---
 
-# 🌟 雙重路徑保險：確保無論 Vercel 如何轉發都能抓到請求
-@app.post("/api/login")
-@app.post("/login")
+# 診斷用：如果瀏覽器打開 [網址]/api/health 看到 OK，代表後端有動
+@app.get("/api/health")
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "message": "Backend is running!"}
+
+# 登入 API：支援兩種路徑格式，確保轉發萬無一失
+@app.api_route("/api/login", methods=["POST", "OPTIONS"])
+@app.api_route("/login", methods=["POST", "OPTIONS"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    if form_data.username in FAKE_USERS_DB and FAKE_USERS_DB[form_data.username] == form_data.password:
-        return {"access_token": f"token_{form_data.username}", "token_type": "bearer"}
-    # 這裡如果失敗會回傳 400，前端就會顯示「帳號密碼錯誤」
+    username = form_data.username
+    password = form_data.password
+    
+    if username in FAKE_USERS_DB and FAKE_USERS_DB[username] == password:
+        return {"access_token": f"token_{username}", "token_type": "bearer"}
+    
     raise HTTPException(status_code=400, detail="帳號或密碼錯誤")
 
+# 聊天 API
 @app.post("/api/chat")
 @app.post("/chat")
 async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
     try:
+        # 如果是新對話，建立新 session 並注入性格
         if token not in chat_sessions:
             chat_sessions[token] = client.chats.create(
-                model="gemini-1.5-flash", 
+                model="gemini-2.0-flash-exp", 
                 config=types.GenerateContentConfig(
                     system_instruction=CHARACTER_SETTING
                 )
@@ -91,9 +102,16 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
         
         current_chat = chat_sessions[token]
         response = current_chat.send_message(request.message)
+        
         return {"reply": response.text}
         
     except Exception as e:
-        print(f"Error: {e}")
-        return {"reply": "我現在有點累了，可以稍後再跟我說話嗎？😊"}
+        print(f"Chat Error: {str(e)}")
+        # 即使報錯也回傳 JSON，避免前端解析失敗
+        return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？😊"}
+
+# --- 5. 本地執行（部署到 Vercel 時這段會被忽略） ---
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 

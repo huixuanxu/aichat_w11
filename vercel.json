@@ -1,13 +1,19 @@
 {
   "version": 2,
+  "functions": {
+    "backend/main.py": {
+      "runtime": "@vercel/python"
+    }
+  },
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/:path*",
       "destination": "backend/main.py"
     },
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "trailingSlash": false
 }

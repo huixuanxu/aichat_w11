@@ -103,7 +103,7 @@ function Chat() {
           backdropFilter: 'blur(5px)'
         }}>
           <h2 style={{ margin: 0, color: colors.text, fontWeight: '400', fontSize: '1.1rem', letterSpacing: '2px' }}>
-            ✨ 專屬助理 ‧ 溫暖陪伴
+            ✨ 專屬夥伴 ‧ 溫暖陪伴
           </h2>
         </div>
 
@@ -167,7 +167,7 @@ function Chat() {
                 padding: '14px 22px', 
                 borderRadius: '30px', 
                 border: `1px solid ${colors.inputBorder}`,
-                backgroundColor: 'rgba(255,255,255,0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.51)',
                 outline: 'none',
                 fontSize: '15px',
                 color: colors.text,
@@ -179,6 +179,7 @@ function Chat() {
               style={{ 
                 backgroundColor: colors.userBubble, 
                 color: 'white', 
+                fontSize: '15px',
                 border: 'none', 
                 padding: '14px 28px', 
                 borderRadius: '30px', 

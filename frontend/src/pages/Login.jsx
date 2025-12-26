@@ -8,30 +8,27 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+const handleLogin = async (e) => {
     e.preventDefault(); 
     setIsLoading(true);
 
-    const params = new URLSearchParams();
-    params.append('username', username);
-    params.append('password', password);
-
     try {
-     // 🌟 修正：確保路徑與後端 @app.post("/api/login") 一致
-        const response = await axios.post('http://127.0.0.1:8000/api/login', params, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-      });
-      
-      localStorage.setItem('token', response.data.access_token);
-      navigate('/chat'); 
+        const API_BASE_URL = window.location.origin;
+        const response = await axios.post(`${API_BASE_URL}/api/login`, 
+            new URLSearchParams({ 'username': username, 'password': password }), 
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+        );
+        
+        localStorage.setItem('token', response.data.access_token);
+        navigate('/chat'); 
     } catch (error) {
-      console.error("登入出錯了：", error.response?.data || error.message);
-      // 微調錯誤提示，使其更符合雲端部署後的狀況
-      alert('帳號或密碼錯誤，請重新檢查');
+        // 這裡可以增加對 401 或 500 錯誤的區分
+        console.error("登入出錯了：", error.response?.data || error.message);
+        alert('登入失敗：請確認帳號密碼，或檢查伺服器狀態');
     } finally {
-      setIsLoading(false); 
+        setIsLoading(false); 
     }
-  };
+};
 
   return (
     <div style={{ backgroundColor: '#E5E2DF', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>

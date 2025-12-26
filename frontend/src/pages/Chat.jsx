@@ -25,9 +25,10 @@ function Chat() {
     setIsLoading(true);
 
    try {
-      const res = await axios.post('http://127.0.0.1:8000/api/chat',
-        { message: currentInput },
-        { headers: { Authorization: `Bearer ${token}` } }
+    const API_BASE_URL = window.location.origin; // 🌟 自動獲取
+    const res = await axios.post(`${API_BASE_URL}/api/chat`,
+      { message: currentInput },
+      { headers: { Authorization: `Bearer ${token}` } }
       );
       
       // 3. 取得 AI 回應並加入對話紀錄

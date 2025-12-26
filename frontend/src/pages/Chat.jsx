@@ -24,10 +24,8 @@ function Chat() {
     setInput('');
     setIsLoading(true);
 
-    try {
-      // 🌟 重點修正：將 'http://localhost:8000/chat' 改為 '/api/chat'
-      // 這樣在 Vercel 部署後，它會自動對應到後端 API
-      const res = await axios.post('/api/chat',
+   try {
+      const res = await axios.post('http://127.0.0.1:8000/api/chat',
         { message: currentInput },
         { headers: { Authorization: `Bearer ${token}` } }
       );

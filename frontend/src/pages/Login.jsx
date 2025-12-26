@@ -17,8 +17,8 @@ function Login() {
     params.append('password', password);
 
     try {
-      // 🌟 重點修正：將 'http://127.0.0.1:8000/login' 改為 '/api/login'
-      const response = await axios.post('/api/login', params, {
+     // 🌟 修正：確保路徑與後端 @app.post("/api/login") 一致
+        const response = await axios.post('http://127.0.0.1:8000/api/login', params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       });
       

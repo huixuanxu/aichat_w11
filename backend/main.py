@@ -17,6 +17,15 @@ if not API_KEY:
 
 client = genai.Client(api_key=API_KEY)
 
+# 🌟  請把測試程式碼貼在這裡 (CHARACTER_SETTING 之前)
+try:
+    print("🔍 正在檢查您的 API Key 權限...")
+    # 注意：SDK 1.56.0 版的 list 語法
+    for m in client.models.list():
+        print(f"✅ 可用模型: {m.name}")
+except Exception as e:
+    print(f"❌ 無法列出模型，請檢查 Key 是否正確或 API 是否啟用: {e}")
+
 # --- 2. 陪伴者性格與記憶管理 ---
 
 CHARACTER_SETTING = """
@@ -91,29 +100,39 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @app.post("/chat")
 async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
     try:
+        # 🌟 修改點 1：如果 token 不在紀錄中，使用 1.56.0 正確語法建立 chat session
         if token not in chat_sessions:
+            print(f"📢 找不到 Session，正在為 {token} 重新建立對話...")
+            # 使用 client.chats.create 並注入性格設定 (system_instruction)
             chat_sessions[token] = client.chats.create(
-                model="gemini-2.0-flash-exp", 
+                model="gemini-3-flash-preview",
                 config=types.GenerateContentConfig(
-                    system_instruction=CHARACTER_SETTING
+                    system_instruction=CHARACTER_SETTING,
+                    temperature=0.7
                 )
             )
         
         current_chat = chat_sessions[token]
+        
+        # 🌟 修改點 2：調用 send_message 發送用戶訊息
         response = current_chat.send_message(request.message)
+        
+        # 返回 AI 生成的純文字回覆
         return {"reply": response.text}
         
     except Exception as e:
-        print(f"Chat Error: {str(e)}")
+        # 這裡會印出真正的詳細錯誤 (例如: API Key 限制、網路連線等)
+        print(f"❌ 發生詳細錯誤: {type(e).__name__}: {str(e)}")
+        
+        # 針對常見的 403 錯誤提供更精確的終端機提示
+        if "403" in str(e):
+            print("⚠️ 提示：這通常是 Google Cloud 的『網站限制』阻擋了 localhost。請將限制改為『無』。")
+            
         return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？"}
-
-# Vercel handler - 必須在最底層，全域作用域
-def handler(request):
-    return app(request)
 
 # 本地執行
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
 
 

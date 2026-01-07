@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
 function Chat() {
+       // VITE_API_URL 會在 Vercel 設定
+  const API_BASE_URL = import.meta.env.VITE_API_URL;
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +27,7 @@ function Chat() {
     setIsLoading(true);
 
    try {
-    const API_BASE_URL = window.location.origin; // 🌟 自動獲取
+
     const res = await axios.post(`${API_BASE_URL}/api/chat`,
       { message: currentInput },
       { headers: { Authorization: `Bearer ${token}` } }

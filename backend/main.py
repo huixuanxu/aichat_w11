@@ -70,7 +70,7 @@ app.add_middleware(
 
 # 測試用帳密
 FAKE_USERS_DB = {"user123": "password123"}
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 class ChatRequest(BaseModel):
     message: str
@@ -130,9 +130,11 @@ async def chat(request: ChatRequest, token: str = Depends(oauth2_scheme)):
             
         return {"reply": "抱歉，我現在思緒有點亂，可以重新說一次嗎？"}
 
-# 本地執行
+# 本地 / Render 執行
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 

@@ -13,7 +13,8 @@ const handleLogin = async (e) => {
     setIsLoading(true);
 
     try {
-        const API_BASE_URL = window.location.origin;
+          // VITE_API_URL 會在 Vercel 設定
+        const API_BASE_URL = import.meta.env.VITE_API_URL;
         const response = await axios.post(`${API_BASE_URL}/api/login`, 
             new URLSearchParams({ 'username': username, 'password': password }), 
             { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
